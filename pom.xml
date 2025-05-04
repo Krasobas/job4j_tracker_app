@@ -12,28 +12,21 @@
   <name>job4j_tracker_app</name>
 
   <properties>
-  <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-  <maven.compiler.source>14</maven.compiler.source>
-  <maven.compiler.target>14</maven.compiler.target>
-</properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <maven.compiler.source>14</maven.compiler.source>
+    <maven.compiler.target>14</maven.compiler.target>
+    <org.mapstruct.version>1.6.3</org.mapstruct.version>
+    <org.projectlombok.version>1.18.38</org.projectlombok.version>
+  </properties>
 
   <profiles>
     <!--test_h2-->
     <profile>
       <id>test</id>
       <properties>
-        <db.url>jdbc:h2:${basedir}/testdb;MODE=PostgreSQL;CASE_INSENSITIVE_IDENTIFIERS=TRUE;</db.url>
-        <db.username></db.username>
-        <db.password></db.password>
-        <db.driver>org.h2.Driver</db.driver>
+        <liquibase.config>db/liquibase_test.properties</liquibase.config>
       </properties>
-      <!--<properties>
-          <db.url>jdbc:h2:./testdb;MODE=PostgreSQL;CASE_INSENSITIVE_IDENTIFIERS=TRUE;</db.url>
-          <db.username></db.username>
-          <db.password></db.password>
-          <db.driver>org.h2.Driver</db.driver>
-      </properties>-->
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
@@ -42,19 +35,26 @@
     <profile>
       <id>production</id>
       <properties>
-        <db.url>jdbc:postgresql://127.0.0.1:5432/tracker</db.url>
-        <db.username>postgres</db.username>
-        <db.password>password</db.password>
-        <db.driver>org.postgresql.Driver</db.driver>
+        <liquibase.config>db/liquibase.properties</liquibase.config>
       </properties>
     </profile>
   </profiles>
 
   <dependencies>
     <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-core</artifactId>
+      <version>5.6.11.Final</version>
+    </dependency>
+    <dependency>
+      <groupId>org.mapstruct</groupId>
+      <artifactId>mapstruct</artifactId>
+      <version>${org.mapstruct.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
-      <version>1.18.38</version>
+      <version>${org.projectlombok.version}</version>
       <scope>provided</scope>
     </dependency>
     <!--hamcrest-->
@@ -124,6 +124,33 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.1</version>
+        <configuration>
+          <source>${maven.compiler.source}</source>
+          <target>${maven.compiler.target}</target>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>${org.projectlombok.version}</version>
+            </path>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok-mapstruct-binding</artifactId>
+              <version>0.2.0</version>
+            </path>
+            <path>
+              <groupId>org.mapstruct</groupId>
+              <artifactId>mapstruct-processor</artifactId>
+              <version>${org.mapstruct.version}</version>
+            </path>
+            <!-- other annotation processors -->
+          </annotationProcessorPaths>
+        </configuration>
+      </plugin>
       <!--checkstyle-->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -188,12 +215,7 @@
         <artifactId>liquibase-maven-plugin</artifactId>
         <version>3.6.2</version>
         <configuration>
-          <changeLogFile>${basedir}/db/master.xml</changeLogFile>
-          <url>${db.url}</url>
-          <driver>${db.driver}</driver>
-          <username>${db.username}</username>
-          <password>${db.password}</password>
-          <promptOnNonLocalDatabase>false</promptOnNonLocalDatabase>
+          <propertyFile>${liquibase.config}</propertyFile>
         </configuration>
         <executions>
           <execution>
