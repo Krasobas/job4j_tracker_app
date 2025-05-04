@@ -47,6 +47,7 @@ public class ConsoleInputTest {
         ReplaceAction replaceAction = new ReplaceAction(output);
 
         Input input = mock(Input.class);
+        doReturn("").when(input).askStr(anyString());
 
         replaceAction.execute(input, tracker);
 
