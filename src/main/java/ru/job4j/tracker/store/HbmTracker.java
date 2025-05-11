@@ -36,34 +36,34 @@ public class HbmTracker implements Store, AutoCloseable {
     public boolean replace(int id, Item item) {
         try (Session session = sf.openSession()) {
             session.beginTransaction();
-            session.createQuery(
+            int updated = session.createQuery(
                             "UPDATE Item SET name = :fName, created = :fCreated WHERE id = :fId"
                     ).setParameter("fName", item.getName())
                     .setParameter("fCreated", item.getCreated())
                     .setParameter("fId", id)
                     .executeUpdate();
             session.getTransaction().commit();
-            return true;
+            return updated > 0;
         } catch (Exception e) {
             LOG.error("Impossible to rename item with id = {} in table {}.", id, TABLE_NAME, e);
-            return false;
         }
+        return false;
     }
 
     @Override
     public boolean delete(int id) {
         try (Session session = sf.openSession()) {
             session.beginTransaction();
-            session.createQuery(
+            int deleted = session.createQuery(
                             "DELETE Item WHERE id = :fId"
                     ).setParameter("fId", id)
                     .executeUpdate();
             session.getTransaction().commit();
-            return true;
+            return deleted > 0;
         } catch (Exception e) {
             LOG.error("Impossible to delete item with id = {} from table {}.", id, TABLE_NAME, e);
-            return false;
         }
+        return false;
     }
 
     @Override
@@ -72,8 +72,8 @@ public class HbmTracker implements Store, AutoCloseable {
             return session.createQuery("FROM Item", Item.class).list();
         } catch (Exception e) {
             LOG.error("Impossible to get all items from table {}.", TABLE_NAME, e);
-            return Collections.emptyList();
         }
+        return Collections.emptyList();
     }
 
     @Override
@@ -84,8 +84,8 @@ public class HbmTracker implements Store, AutoCloseable {
                     .list();
         } catch (Exception e) {
             LOG.error("Impossible to find item with name = {} in table {}.", key, TABLE_NAME, e);
-            return Collections.emptyList();
         }
+        return Collections.emptyList();
     }
 
     @Override
@@ -96,8 +96,8 @@ public class HbmTracker implements Store, AutoCloseable {
                     .uniqueResult();
         } catch (Exception e) {
             LOG.error("Impossible to find item with id = {} in table {}.", id, TABLE_NAME, e);
-            return null;
         }
+        return null;
     }
 
     @Override
