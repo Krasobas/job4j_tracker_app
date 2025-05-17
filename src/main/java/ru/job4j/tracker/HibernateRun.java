@@ -6,6 +6,9 @@ import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import ru.job4j.tracker.model.Item;
+import ru.job4j.tracker.toone.Role;
+import ru.job4j.tracker.toone.User;
+import ru.job4j.tracker.toone.UserMessenger;
 
 import java.util.List;
 
@@ -15,20 +18,22 @@ public class HibernateRun {
                 .configure().build();
         try {
             SessionFactory sf = new MetadataSources(registry).buildMetadata().buildSessionFactory();
-            var item = new Item();
-            item.setName("Learn Hibernate");
-            create(item, sf);
-            System.out.println(item);
-            item.setName("Learn Hibernate 5.");
-            update(item, sf);
-            System.out.println(item);
-            Item rsl = findById(item.getId(), sf);
-            System.out.println(rsl);
-            delete(rsl.getId(), sf);
-            List<Item> list = findAll(sf);
-            for (Item it : list) {
-                System.out.println(it);
-            }
+            var role = new Role();
+            role.setName("ADMIN");
+            create(role, sf);
+            var user = new User();
+            user.setName("Admin Admin");
+            user.setMessengers(List.of(
+                    new UserMessenger(0, "tg", "@tg"),
+                    new UserMessenger(0, "wu", "@wu")
+            ));
+            user.setRole(role);
+            create(user, sf);
+            var stored = sf.openSession()
+                    .createQuery("from User where id = :fId", User.class)
+                    .setParameter("fId", user.getId())
+                    .getSingleResult();
+            stored.getMessengers().forEach(System.out::println);
         }  catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -36,48 +41,20 @@ public class HibernateRun {
         }
     }
 
-    public static Item create(Item item, SessionFactory sf) {
+    public static <T> void create(T model, SessionFactory sf) {
         Session session = sf.openSession();
         session.beginTransaction();
-        session.save(item);
-        session.getTransaction().commit();
-        session.close();
-        return item;
-    }
-
-    public static void update(Item item, SessionFactory sf) {
-        Session session = sf.openSession();
-        session.beginTransaction();
-        session.update(item);
+        session.persist(model);
         session.getTransaction().commit();
         session.close();
     }
 
-    public static void delete(Integer id, SessionFactory sf) {
+    public static <T> List<T> findAll(Class<T> cl, SessionFactory sf) {
         Session session = sf.openSession();
         session.beginTransaction();
-        Item item = new Item();
-        item.setId(id);
-        session.delete(item);
+        List<T> list = session.createQuery("from " + cl.getName(), cl).list();
         session.getTransaction().commit();
         session.close();
-    }
-
-    public static List<Item> findAll(SessionFactory sf) {
-        Session session = sf.openSession();
-        session.beginTransaction();
-        List<Item> result = session.createQuery("from ru.job4j.tracker.model.Item", Item.class).list();
-        session.getTransaction().commit();
-        session.close();
-        return result;
-    }
-
-    public static Item findById(Integer id, SessionFactory sf) {
-        Session session = sf.openSession();
-        session.beginTransaction();
-        Item result = session.get(Item.class, id);
-        session.getTransaction().commit();
-        session.close();
-        return result;
+        return list;
     }
 }
